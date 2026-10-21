@@ -106,4 +106,11 @@ interface EuiccChannelManager {
     suspend fun notifyEuiccProfilesChanged(logicalSlotId: Int) {
         // no-op by default
     }
+
+    /**
+     * Power-cycle the SIM behind a port so the modem re-reads the eUICC. Used when a profile
+     * switch went through but the modem ignored the eUICC's REFRESH.
+     * Returns false if this is not possible (e.g. the application is unprivileged).
+     */
+    suspend fun resetModemSlot(physicalSlotId: Int, portId: Int): Boolean = false
 }

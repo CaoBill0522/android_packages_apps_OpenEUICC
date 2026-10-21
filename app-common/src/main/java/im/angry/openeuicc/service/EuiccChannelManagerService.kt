@@ -535,9 +535,13 @@ open class EuiccChannelManagerService : LifecycleService(), OpenEuiccContextMark
                 }
 
                 if (!refreshed && slotId != EuiccChannelManager.USB_CHANNEL_ID) {
-                    // We may have switched the profile, but we could not refresh. Tell the caller about this
-                    // but only if we are talking to a modem and not a USB reader
-                    throw SwitchingProfilesRefreshException()
+                    // We may have switched the profile, but we could not refresh. Some modems ignore
+                    // the eUICC's REFRESH altogether; power-cycling the SIM makes them re-read it.
+                    // Otherwise, tell the caller about this, but only if we are talking to a modem
+                    // and not a USB reader
+                    if (!euiccChannelManager.resetModemSlot(slotId, portId)) {
+                        throw SwitchingProfilesRefreshException()
+                    }
                 }
 
                 if (reconnectTimeoutMillis > 0) {

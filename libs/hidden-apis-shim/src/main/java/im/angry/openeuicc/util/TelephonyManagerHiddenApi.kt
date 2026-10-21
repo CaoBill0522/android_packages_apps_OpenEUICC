@@ -99,6 +99,17 @@ var TelephonyManager.simSlotMapping: Collection<UiccSlotMapping>
         setSimSlotMapping.invoke(this, new)
     }
 
+private val setSimPowerStateForSlot: Method by lazy {
+    TelephonyManager::class.java.getMethod(
+        "setSimPowerStateForSlot",
+        Int::class.java, Int::class.java
+    )
+}
+
+fun TelephonyManager.setSimPowerStateForSlot(slotIndex: Int, state: Int) {
+    setSimPowerStateForSlot.invoke(this, slotIndex, state)
+}
+
 private val requestEmbeddedSubscriptionInfoListRefresh: Method by lazy {
     SubscriptionManager::class.java.getMethod("requestEmbeddedSubscriptionInfoListRefresh", Int::class.java)
 }

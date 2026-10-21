@@ -1,8 +1,11 @@
 package im.angry.openeuicc.core
 
 import android.content.Context
+import android.telephony.TelephonyManager
+import android.util.Log
 import im.angry.openeuicc.di.AppContainer
 import im.angry.openeuicc.util.*
+import kotlinx.coroutines.delay
 
 class PrivilegedEuiccChannelManager(appContainer: AppContainer, context: Context) :
     DefaultEuiccChannelManager(appContainer, context) {
@@ -32,5 +35,29 @@ class PrivilegedEuiccChannelManager(appContainer: AppContainer, context: Context
     override suspend fun notifyEuiccProfilesChanged(logicalSlotId: Int) {
         val channel = findEuiccChannelByLogicalSlot(logicalSlotId, EuiccChannel.SecureElementId.DEFAULT) ?: return
         appContainer.subscriptionManager.tryRefreshCachedEuiccInfo(channel.cardId)
+    }
+
+    override suspend fun resetModemSlot(physicalSlotId: Int, portId: Int): Boolean {
+        val logicalSlotId = tm.uiccCardsInfoCompat
+            .find { it.physicalSlotIndex == physicalSlotId }
+            ?.ports?.find { it.portIndex == portId }
+            ?.logicalSlotIndex ?: -1
+        if (logicalSlotId < 0) return false
+
+        return try {
+            Log.i(TAG, "Power-cycling logical slot $logicalSlotId so the modem re-reads the eUICC")
+            tm.setSimPowerStateForSlot(logicalSlotId, TelephonyManager.CARD_POWER_DOWN)
+            delay(SIM_POWER_CYCLE_DELAY_MILLIS)
+            tm.setSimPowerStateForSlot(logicalSlotId, TelephonyManager.CARD_POWER_UP)
+            true
+        } catch (e: Exception) {
+            Log.w(TAG, "Could not power-cycle logical slot $logicalSlotId", e)
+            false
+        }
+    }
+
+    companion object {
+        private const val TAG = "PrivilegedEuiccChannelManager"
+        private const val SIM_POWER_CYCLE_DELAY_MILLIS = 2000L
     }
 }
