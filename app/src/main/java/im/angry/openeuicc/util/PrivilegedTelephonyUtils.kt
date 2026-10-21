@@ -74,7 +74,9 @@ suspend fun TelephonyManager.updateSimSlotMapping(
 }
 
 fun SubscriptionManager.tryRefreshCachedEuiccInfo(cardId: Int) {
-    if (cardId != 0) {
+    // Card IDs start at 0; only the negative TelephonyManager sentinels
+    // (UNSUPPORTED_CARD_ID, UNINITIALIZED_CARD_ID) mean there is no card.
+    if (cardId >= 0) {
         try {
             requestEmbeddedSubscriptionInfoListRefresh(cardId)
         } catch (e: Exception) {
